@@ -252,31 +252,52 @@ module.exports.scanFolder = scanFolder
 
 // Input relative filepath, output all details that can be parsed
 function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
-  relPath = filePathToPOSIX(relPath)
-  var splitDir = relPath.split('/')
+  const regex = /(?:(.*) - (\d*) )?(.*) by (.*)$/;
+  const directory = Path.basename(Path.normalize(`${folderPath}${Path.sep}${relPath}${Path.sep}`));
 
-  var folder = splitDir.pop() // Audio files will always be in the directory named for the title
-  series = (splitDir.length > 1) ? splitDir.pop() : null // If there are at least 2 more directories, next furthest will be the series
-  author = (splitDir.length > 0) ? splitDir.pop() : null // There could be many more directories, but only the top 3 are used for naming /author/series/title/
+  if (regex.test(directory)) {
+    const parts = directory.match(regex);
 
-  // The  may contain various other pieces of metadata, these functions extract it.
-  var [folder, narrators] = getNarrator(folder)
-  var [folder, sequence] = series ? getSequence(folder) : [folder, null]
-  var [folder, publishedYear] = getPublishedYear(folder)
-  var [title, subtitle] = parseSubtitle ? getSubtitle(folder) : [folder, null]
+    return {
+      mediaMetadata: {
+        author: parts[4],
+        title: parts[3],
+        subtitle: null,
+        series: parts[1],
+        sequence: parts[2],
+        publishedYear: null,
+        narrators: null,
+      },
+      relPath: relPath, // relative audiobook path i.e. /Author Name/Book Name/..
+      path: Path.posix.join(folderPath, relPath) // i.e. /audiobook/Author Name/Book Name/..
+    }
+  } else {
+    relPath = filePathToPOSIX(relPath)
+    var splitDir = relPath.split('/')
 
-  return {
-    mediaMetadata: {
-      author,
-      title,
-      subtitle,
-      series,
-      sequence,
-      publishedYear,
-      narrators,
-    },
-    relPath: relPath, // relative audiobook path i.e. /Author Name/Book Name/..
-    path: Path.posix.join(folderPath, relPath) // i.e. /audiobook/Author Name/Book Name/..
+    var folder = splitDir.pop() // Audio files will always be in the directory named for the title
+    series = (splitDir.length > 1) ? splitDir.pop() : null // If there are at least 2 more directories, next furthest will be the series
+    author = (splitDir.length > 0) ? splitDir.pop() : null // There could be many more directories, but only the top 3 are used for naming /author/series/title/
+
+    // The  may contain various other pieces of metadata, these functions extract it.
+    var [folder, narrators] = getNarrator(folder)
+    var [folder, sequence] = series ? getSequence(folder) : [folder, null]
+    var [folder, publishedYear] = getPublishedYear(folder)
+    var [title, subtitle] = parseSubtitle ? getSubtitle(folder) : [folder, null]
+
+    return {
+      mediaMetadata: {
+        author,
+        title,
+        subtitle,
+        series,
+        sequence,
+        publishedYear,
+        narrators,
+      },
+      relPath: relPath, // relative audiobook path i.e. /Author Name/Book Name/..
+      path: Path.posix.join(folderPath, relPath) // i.e. /audiobook/Author Name/Book Name/..
+    }
   }
 }
 module.exports.getBookDataFromDir = getBookDataFromDir
