@@ -14,7 +14,8 @@
       "sortAttributes": false
     }
   },
-  "editor.formatOnSave": true,
+  "editor.formatOnSave": false,
   "editor.detectIndentation": true,
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "prettier.enable": false
 }
