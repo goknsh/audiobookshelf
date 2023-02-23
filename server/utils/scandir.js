@@ -231,29 +231,46 @@ module.exports.buildLibraryFile = buildLibraryFile
  * @returns {LibraryItemFilenameMetadata}
  */
 function getBookDataFromDir(relPath, parseSubtitle = false) {
-  const splitDir = relPath.split('/')
+  const regex = /(?:(.*) - (\d*) )?(.*) by (.*)$/;
 
-  var folder = splitDir.pop() // Audio files will always be in the directory named for the title
-  series = (splitDir.length > 1) ? splitDir.pop() : null // If there are at least 2 more directories, next furthest will be the series
-  author = (splitDir.length > 0) ? splitDir.pop() : null // There could be many more directories, but only the top 3 are used for naming /author/series/title/
+  if (regex.test(relPath)) {
+    const parts = relPath.match(regex);
 
-  // The  may contain various other pieces of metadata, these functions extract it.
-  var [folder, asin] = getASIN(folder)
-  var [folder, narrators] = getNarrator(folder)
-  var [folder, sequence] = series ? getSequence(folder) : [folder, null]
-  var [folder, publishedYear] = getPublishedYear(folder)
-  var [title, subtitle] = parseSubtitle ? getSubtitle(folder) : [folder, null]
+    return {
+      title: parts[3],
+      subtitle: null,
+      asin: null,
+      authors: parseNameString.parse(parts[4])?.names || parts[4],
+      narrators: null,
+      seriesName: parts[1],
+      seriesSequence: parts[2],
+      publishedYear: null,
+    }
+  } else {
+    const splitDir = relPath.split('/')
+
+    var folder = splitDir.pop() // Audio files will always be in the directory named for the title
+    series = (splitDir.length > 1) ? splitDir.pop() : null // If there are at least 2 more directories, next furthest will be the series
+    author = (splitDir.length > 0) ? splitDir.pop() : null // There could be many more directories, but only the top 3 are used for naming /author/series/title/
+
+    // The  may contain various other pieces of metadata, these functions extract it.
+    var [folder, asin] = getASIN(folder)
+    var [folder, narrators] = getNarrator(folder)
+    var [folder, sequence] = series ? getSequence(folder) : [folder, null]
+    var [folder, publishedYear] = getPublishedYear(folder)
+    var [title, subtitle] = parseSubtitle ? getSubtitle(folder) : [folder, null]
 
 
-  return {
-    title,
-    subtitle,
-    asin,
-    authors: parseNameString.parse(author)?.names || [],
-    narrators: parseNameString.parse(narrators)?.names || [],
-    seriesName: series,
-    seriesSequence: sequence,
-    publishedYear
+    return {
+      title,
+      subtitle,
+      asin,
+      authors: parseNameString.parse(author)?.names || [],
+      narrators: parseNameString.parse(narrators)?.names || [],
+      seriesName: series,
+      seriesSequence: sequence,
+      publishedYear
+    }
   }
 }
 module.exports.getBookDataFromDir = getBookDataFromDir
